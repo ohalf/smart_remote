@@ -1,7 +1,7 @@
 import pickle
 import broadlink
 import time
-from flask import Flask, request, jsonify, current_app
+from flask import Flask, request, jsonify, current_app, render_template
 from MyThread import ThreadManager
 from threading import Event
 from broadlink import Device
@@ -148,5 +148,9 @@ def post_ac_then_off():
 def hello():
     return jsonify({"status": "Hello World"}), 200
 
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 if __name__ == '__main__':
-    app.run(host='10.100.102.2', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False)
