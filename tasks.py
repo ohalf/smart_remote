@@ -71,17 +71,16 @@ def front_end_target_task(dev: Device, ac_setting:int, ac_time:int, fan_speed_re
         timer += 1
     terminate_flag.set()
 
-def get_worldtimeapi_utc_unix_time(max_attempts=3, delay=2):
+def get_worldtimeapi_utc_unix_time(max_attempts=5, delay=5):
     """
     Try to fetch UTC unixtime from WorldTimeAPI up to max_attempts times.
     Waits 'delay' seconds between attempts on failure.
     Returns the unixtime on success, or None on repeated failure.
     """
     url = "https://worldtimeapi.org/api/ip"
-    headers = {"User-Agent": "Mozilla/5.0"}
     for attempt in range(0, max_attempts):
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            response = requests.get(url, timeout=5)
             if response.status_code == 200:
                 data = response.json()
                 return data['unixtime']
@@ -118,12 +117,14 @@ def sam_mode_task(dev, terminate_flag: Event):
             print("It's past 6pm (Tel Aviv, system/delta), exiting cycle.")
             return
         # AC ON for 30 minutes
+        print(f"Starting AC ON for 30 minutes at {tel_aviv_now.isoformat()}")
         dev.send_data(data['ac_on_25'])
         for _ in range(30 * 60):
             if terminate_flag.is_set():
                 return
             time.sleep(1)
         # AC OFF for 2 hours
+        print(f"Powering off AC for 2 hours at {tel_aviv_now.isoformat()}")
         dev.send_data(data['ac_off'])
         for _ in range(2 * 60 * 60):
             if terminate_flag.is_set():
