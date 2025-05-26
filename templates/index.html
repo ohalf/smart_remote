@@ -79,33 +79,71 @@
       text-align: center;
       color: green;
     }
+
+    /* Dark mode styles */
+    body.dark-mode {
+      background-color: #181a1b;
+    }
+    .dark-mode .container {
+      background: #23272b;
+      color: #f1f1f1;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .dark-mode h2, .dark-mode h3, .dark-mode label {
+      color: #f1f1f1;
+    }
+    .dark-mode input, .dark-mode select, .dark-mode button {
+      background-color: #2c2f34;
+      color: #f1f1f1;
+      border: 1px solid #444;
+    }
+    .dark-mode button {
+      background-color: #357ab8;
+      color: #fff;
+    }
+    .dark-mode button:hover {
+      background-color: #285a8c;
+    }
+    .dark-mode .danger {
+      background-color: #b23b3b;
+    }
+    .dark-mode .danger:hover {
+      background-color: #8a2929;
+    }
+    .dark-mode #status {
+      color: #7fff7f;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <button id="darkModeToggle" style="float:right;margin-bottom:10px;">🌙 Dark Mode</button>
     <h2>Smart Remote Control</h2>
 
     <div>
-      <h3>AC Sequence</h3>
-      <label for="acDuration">Duration (seconds):</label>
-      <input type="number" id="acDuration" value="60">
-      <button onclick="runAC()">Run AC Sequence</button>
-    </div>
-
-    <div>
-      <h3>Fan Control</h3>
-      <label for="fanPower">Fan Power:</label>
-      <select id="fanPower">
-        <option value="1">1 (Low)</option>
-        <option value="2">2 (Medium)</option>
-        <option value="3">3 (High)</option>
+      <h3>AC & Fan Settings</h3>
+      <label for="acSetting">AC Setting:</label>
+      <select id="acSetting">
+        <option value="25">25°C</option>
       </select>
-      <button onclick="runFan()">Turn On Fan</button>
+      <label for="acTime">AC Time (minutes):</label>
+      <input type="number" id="acTime" value="15" min="1">
+      <label for="fanSpeed">Fan Speed:</label>
+      <select id="fanSpeed">
+        <option value="0">Off</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+      </select>
+      <button onclick="sendFrontEndTarget()">Send</button>
     </div>
 
-    <div>
-      <h3>Emergency Stop</h3>
-      <button class="danger" onclick="stopAll()">Stop All</button>
+    <div style="margin-top:15px;">
+      <button class="danger" style="width:100%;font-size:16px;background-color:#e98c1e;border:none;" onclick="samMode()">🐶 Sam's Mode</button>
+    </div>
+
+    <div style="margin-top:30px;">
+      <button class="danger" style="width:100%;font-size:16px;" onclick="stopAll()">🛑 Stop All</button>
     </div>
 
     <div id="status"></div>
@@ -126,18 +164,18 @@
       }
     }
 
-    function runAC() {
-      const minutes = parseInt(document.getElementById('acDuration').value);
-      postCommand('/post_ac_then_off', { time_in_minutes: minutes });
-    }
-
-    function runFan() {
-      const minutes = parseInt(document.getElementById('acDuration').value);
-      postCommand('/post_ac_then_fan', { time_in_minutes_between: minutes });
+    function sendFrontEndTarget() {
+      const acSetting = document.getElementById('acSetting').value;
+      const acTime = document.getElementById('acTime').value;
+      const fanSpeed = document.getElementById('fanSpeed').value;
+      postCommand('/front_end_target', {
+        ac_setting: acSetting,
+        ac_time: acTime,
+        fan_speed_requested: fanSpeed
+      });
     }
 
     function stopAll() {
-      // Your backend expects GET for /stop_all
       fetch('/stop_all')
         .then(res => res.json())
         .then(data => {
@@ -147,6 +185,30 @@
           document.getElementById('status').innerText = 'Error: ' + err;
         });
     }
+
+    function samMode() {
+      fetch('/sam_mode')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('status').innerText = data.status || 'Sam mode started';
+        })
+        .catch(err => {
+          document.getElementById('status').innerText = 'Error: ' + err;
+        });
+    }
+
+    // Dark mode toggle
+    const darkModeBtn = document.getElementById('darkModeToggle');
+    function setDarkMode(on) {
+      document.body.classList.toggle('dark-mode', on);
+      localStorage.setItem('darkMode', on ? '1' : '0');
+      darkModeBtn.innerText = on ? '☀️ Light Mode' : '🌙 Dark Mode';
+    }
+    darkModeBtn.addEventListener('click', () => {
+      setDarkMode(!document.body.classList.contains('dark-mode'));
+    });
+    // On load, set mode from localStorage
+    if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
   </script>
 
 </body>

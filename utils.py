@@ -1,6 +1,8 @@
 import inspect
 import pickle
 import os
+from broadlink import Device
+import broadlink
 
 def print_args(*args, **kwargs):
     frame = inspect.currentframe()
@@ -13,8 +15,8 @@ def print_args(*args, **kwargs):
 def print_entire_pickle_file_for_debug():
     with open("./saved_commands.pkl", 'rb') as f:
         data = pickle.load(f) 
-        print(data.keys())
-        print(data)
+    print(data.keys())
+    print(data)
 
 def add_to_pickle(file_path, key, value):
     print(f"Adding:\n{key} : {value}")
@@ -38,12 +40,52 @@ def get_ir_command(device):
     input("When the LED blinks, point the remote at the Broadlink device and press the button you want to learn.")
     return device.check_data()
 
-def get_fr_command(device):
+def get_rf_command(device):
+    try:
+        device.cancel_sweep_frequency()
+    except:
+        pass  # in case it's not sweeping yet
+    input("Sweeping frequencies. Press enter to continue...")
     device.sweep_frequency()
     input("When the LED blinks, point the remote at the Broadlink device for the first time and long press the button you want to learn.")
     ok = device.check_frequency()
     if ok:
         print('Frequency found!')
+    else:
+        print('Frequency not found, Exiting...')
+        return None
     device.find_rf_packet()
     input("When the LED blinks, point the remote at the Broadlink device for the second time and short press the button you want to learn.")
     return device.check_data()
+
+def get_dev() -> Device:
+    devices = broadlink.discover()
+    return devices[0]
+
+def auth_dev(dev:Device) -> Device:
+    dev.auth()
+    return dev
+
+def init() -> Device:
+    dev = get_dev()
+    dev = auth_dev(dev)
+    return dev
+
+def some_debug(dev:Device):
+    print("Debugging function called")
+    dev.cancel_sweep_frequency()
+
+if __name__ == "__main__":
+    # dev = init()
+
+    # # some_debug(dev)
+
+    # # Testing the functions
+    # fan_2 = get_rf_command(dev)
+    # print(f"fan_2: {fan_2}")
+    # # add_to_pickle("./saved_commands.pkl", "fan_2", fan_2)
+
+    from WorldTimeAPI import services as serv
+    myclient = serv.client('timezone')
+    regions = myclient.regions()
+    print(regions.data)
